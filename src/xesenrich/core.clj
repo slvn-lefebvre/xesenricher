@@ -19,7 +19,7 @@
   "Take a zipper, a function that matches a pattern in the tree,
    and a function that edits the current location in the tree.  Examine the tree
    nodes in depth-first order, determine whether the matcher matches, and if so
-   apply the editor."
+   applies the obstacle generator."
   [zipper matcher obstacle-gen]
   (loop [loc zipper]
     (if (zip/end? loc)
@@ -47,6 +47,10 @@
      (xml/element :string {:key "concept:name", :value "opManager"}),
      (xml/element :string {:key "lifecycleP:transition", :value "on-leave"})))
 
+
+;; Idea is to have one log per person, machine, etc... with matching timestamps, eventually
+;; this way you can detect "happen before relationships", but only keep interesting obstacles.
+;; print out stats about tasks, machines and persons (org-mode like tabs) 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
