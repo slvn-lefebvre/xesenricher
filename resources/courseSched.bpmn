@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:tns="http://sourceforge.net/bpmn/definitions/_1447318364867" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:yaoqiang="http://bpmn.sourceforge.net" exporter="Yaoqiang BPMN Editor" exporterVersion="4.0" expressionLanguage="http://www.w3.org/1999/XPath" id="_1447318364867" name="" targetNamespace="http://sourceforge.net/bpmn/definitions/_1447318364867" typeLanguage="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://bpmn.sourceforge.net/schemas/BPMN20.xsd">
+ 
+<process id="PROCESS_1" isClosed="false" isExecutable="true" processType="None">
+    <userTask completionQuantity="1" id="_2" implementation="##unspecified" isForCompensation="false" name="Analyze Request" startQuantity="1">
+      <incoming>_5</incoming>
+      <outgoing>_44</outgoing>
+    </userTask>
+    <sequenceFlow id="_5" sourceRef="_3" targetRef="_2"/>
+    <userTask completionQuantity="1" id="_43" implementation="##unspecified" isForCompensation="false" name="Search Full Time Trainer" startQuantity="1">
+      <incoming>_44</incoming>
+      <outgoing>_46</outgoing>
+      <ioSpecification>
+        <dataOutput id="Dout_43_74" isCollection="false"/>
+        <inputSet/>
+        <outputSet>
+          <dataOutputRefs>Dout_43_74</dataOutputRefs>
+        </outputSet>
+      </ioSpecification>
+      <dataOutputAssociation id="_75">
+        <sourceRef>Dout_43_74</sourceRef>
+        <targetRef>_74</targetRef>
+      </dataOutputAssociation>
+    </userTask>
+    <sequenceFlow id="_44" sourceRef="_2" targetRef="_43"/>
+    <sequenceFlow id="_46" sourceRef="_43" targetRef="_45"/>
+    <userTask completionQuantity="1" id="_47" implementation="##unspecified" isForCompensation="false" name="Search Freelance Trainer" startQuantity="1">
+      <incoming>_48</incoming>
+      <outgoing>_52</outgoing>
+      <ioSpecification>
+        <dataOutput id="Dout_47_74" isCollection="false"/>
+        <inputSet/>
+        <outputSet>
+          <dataOutputRefs>Dout_47_74</dataOutputRefs>
+        </outputSet>
+      </ioSpecification>
+      <dataOutputAssociation id="_76">
+        <sourceRef>Dout_47_74</sourceRef>
+        <targetRef>_74</targetRef>
+      </dataOutputAssociation>
+    </userTask>
+    <sequenceFlow id="_48" sourceRef="_45" targetRef="_47">
+      <conditionExpression><![CDATA[NO]]></conditionExpression>
+    </sequenceFlow>
+    <userTask completionQuantity="1" id="_49" implementation="##unspecified" isForCompensation="false" name="Search Equipment" startQuantity="1">
+      <incoming>_50</incoming>
+      <incoming>_53</incoming>
+      <incoming>_58</incoming>
+      <outgoing>_60</outgoing>
+      <ioSpecification>
+        <dataOutput id="Dout_49_78" isCollection="false"/>
+        <inputSet/>
+        <outputSet>
+          <dataOutputRefs>Dout_49_78</dataOutputRefs>
+        </outputSet>
+      </ioSpecification>
+      <dataOutputAssociation id="_80">
+        <sourceRef>Dout_49_78</sourceRef>
+        <targetRef>_78</targetRef>
+      </dataOutputAssociation>
+    </userTask>
+    <sequenceFlow id="_50" sourceRef="_45" targetRef="_49">
+      <conditionExpression><![CDATA[YES]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="_52" sourceRef="_47" targetRef="_51"/>
+    <sequenceFlow id="_53" sourceRef="_51" targetRef="_49">
+      <conditionExpression><![CDATA[YES]]></conditionExpression>
+    </sequenceFlow>
+    <userTask completionQuantity="1" id="_54" implementation="##unspecified" isForCompensation="false" name="Mix Trainers" startQuantity="1">
+      <incoming>_55</incoming>
+      <outgoing>_57</outgoing>
+      <ioSpecification>
+        <dataOutput id="Dout_54_74" isCollection="false"/>
+        <inputSet/>
+        <outputSet>
+          <dataOutputRefs>Dout_54_74</dataOutputRefs>
+        </outputSet>
+      </ioSpecification>
+      <dataOutputAssociation id="_77">
+        <sourceRef>Dout_54_74</sourceRef>
+        <targetRef>_74</targetRef>
+      </dataOutputAssociation>
+    </userTask>
+    <sequenceFlow id="_55" sourceRef="_51" targetRef="_54">
+      <conditionExpression><![CDATA[NO]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="_57" sourceRef="_54" targetRef="_56"/>
+    <sequenceFlow id="_58" sourceRef="_56" targetRef="_49">
+      <conditionExpression><![CDATA[YES]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="_60" sourceRef="_49" targetRef="_59"/>
+    <sequenceFlow id="_61" name="NO" sourceRef="_59" targetRef="_33"/>
+    <userTask completionQuantity="1" id="_62" implementation="##unspecified" isForCompensation="false" name="Schedule Training" startQuantity="1">
+      <incoming>_63</incoming>
+      <outgoing>_73</outgoing>
+    </userTask>
+    <sequenceFlow id="_63" sourceRef="_59" targetRef="_62">
+      <conditionExpression><![CDATA[YES]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="_67" sourceRef="_56" targetRef="_66">
+      <conditionExpression><![CDATA[NO]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="_73" sourceRef="_62" targetRef="_72"/>
+    <dataStoreReference dataStoreRef="DS_3" id="_74"/>
+    <dataStoreReference dataStoreRef="DS_2" id="_78"/>
+    <startEvent id="_3" isInterrupting="false" name="Request" parallelMultiple="false">
+      <outgoing>_5</outgoing>
+    </startEvent>
+    <exclusiveGateway gatewayDirection="Diverging" id="_45" name="Found ?">
+      <incoming>_46</incoming>
+      <outgoing>_48</outgoing>
+      <outgoing>_50</outgoing>
+    </exclusiveGateway>
+    <exclusiveGateway gatewayDirection="Diverging" id="_51" name="Found ?">
+      <incoming>_52</incoming>
+      <outgoing>_53</outgoing>
+      <outgoing>_55</outgoing>
+    </exclusiveGateway>
+    <endEvent id="_66" name="End of Process">
+      <incoming>_67</incoming>
+    </endEvent>
+    <endEvent id="_33" name="End Of Process">
+      <incoming>_61</incoming>
+    </endEvent>
+    <exclusiveGateway gatewayDirection="Diverging" id="_56" name="Found ?">
+      <incoming>_57</incoming>
+      <outgoing>_58</outgoing>
+      <outgoing>_67</outgoing>
+    </exclusiveGateway>
+    <exclusiveGateway gatewayDirection="Diverging" id="_59" name="Found ?">
+      <incoming>_60</incoming>
+      <outgoing>_61</outgoing>
+      <outgoing>_63</outgoing>
+    </exclusiveGateway>
+    <endEvent id="_72" name="Success">
+      <incoming>_73</incoming>
+    </endEvent>
+    <textAnnotation id="_68" textFormat="image/png" yaoqiang:name="user">
+      <text>User</text>
+    </textAnnotation>
+    <association associationDirection="None" id="_69" sourceRef="_68" targetRef="_3"/>
+    <association associationDirection="None" id="_82" sourceRef="_62" targetRef="_68"/>
+    <textAnnotation id="_83" textFormat="image/png" yaoqiang:name="user">
+      <text>Trainer</text>
+    </textAnnotation>
+    <association associationDirection="None" id="_84" sourceRef="_83" targetRef="_43"/>
+    <association associationDirection="None" id="_85" sourceRef="_83" targetRef="_47"/>
+    <association associationDirection="None" id="_86" sourceRef="_83" targetRef="_54"/>
+</process>
+</definitions>

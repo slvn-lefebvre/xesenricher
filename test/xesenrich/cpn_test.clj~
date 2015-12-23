@@ -1,0 +1,4 @@
+(ns xesenrich.bpmn-test
+  (:require [clojure.test :refer :all]
+            [xesenrich.cpn :refer :all]))
+
