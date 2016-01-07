@@ -6,6 +6,7 @@
             [clojure.data.zip.xml :as zx]
             [clojure.java.io :as io]
             [clojure.pprint :as p]
+            [xesenrich.xeslog :as log]
             )
     (:import [xesenrich.cpn CPN]
            [xesenrich.cpn Place]
@@ -13,10 +14,25 @@
            [xesenrich.cpn Arc]))
 
 
-(defrecord Person [id])
-(defrecord Request [id status])
-(defrecord Machine [id])
+(defprotocol Entity
+  "Useful protocol for logging in xes"
+  (get-id [this] "Returns entity identifier")
+  )
+  
+(defrecord Person [id lifecycle]
+  Entity
+  (get-id [this] (:id this))
+  )
 
+(defrecord Request [id lifecycle task status executors]
+  Entity
+  (get-id [this] (str (:task this)))
+  )
+
+(defrecord Machine [id lifecycle state]
+  Entity
+  (get-id [this] (:id this))
+  )
 
 ;; Activity net names of places and transition
 (def namesmap {:prepared "Prepared",
@@ -29,19 +45,76 @@
                :activation "Activation",
                :termination "Termination",
                :resume "Resume",
-               :unavailability, "Unavailability"})
+               :unavailability "Unavailability",
+               :busy "Busy"
+               :comeback "Come-Back"})
 
                
+
+(defn log-and-express
+  [lifecycle file entityid state executors]
+ (log/add-business-log file 0 lifecycle entityid state executors))
+
+
 ;; Returns a cpn representing a task. Each place and transition is identified by concatenating the network id with the name of the place / transition
 ;; this is required to avoid merging all nets in a single one when we build the final net.
 ;; However, Idle and on-leave places are shared between activities in the same lane
+
 (defn make-activitynet
   "Returns a CPN representing a human activity mapped to bpmn tasks"
-  [id lane_id]
+  [id lane_id instanceid]
   (let [task #{Request}
         person #{Person}
         taskperson #{Request, Person}
-        act-names (into {} (for [[k v] namesmap] [k (str v id)]))] ; giving each place and transition a unique name is useful for merging cpns
+        act-names (into {} (for [[k v] namesmap] [k (str v id)])) ; giving each place and transition a unique name is useful for merging cpns
+        ;; local functions for logging and arc expressions (ugly, but works)
+        activate-task (fn [token]
+                        (do
+                          (log-and-express "lifecycleT"
+                                           instanceid
+                                           id
+                                           (:activated namesmap)
+                                           [(get-in token [:p :id])])
+                          (log-and-express "lifecycleP"
+                                           instanceid
+                                           (get-in token [:p :id])
+                                           (:busy namesmap)
+                                           nil)
+                          (identity token)))
+        idle-person (fn [token]
+                         (do
+                           (log-and-express "lifecycleP"
+                                            instanceid
+                                            (get-in token [:p :id])
+                                            (:idle namesmap)
+                                            nil)
+                           {:p (:p token)}))
+        terminate-task  (fn [token]
+                          (do
+                            (log-and-express "lifecycleT"
+                                             instanceid
+                                             id
+                                             (:done namesmap)
+                                             [(get-in token [:p :id])])
+                            {:t (:t token)}))
+
+        suspend-task (fn [token]
+                       (do
+                         (log-and-express "lifecycleT"
+                                          instanceid
+                                          id
+                                          (:suspended namesmap)
+                                          nil)
+                         {:t (first token)}))
+       leave-person (fn [token]
+                       (do
+                         (log-and-express "lifecycleP"
+                                          instanceid
+                                          (:id token)
+                                          (:on-leave namesmap)
+                                          nil)
+                         {:p (first token)}))]
+    
   (cpn/CPN.
    id,
    {
@@ -57,26 +130,46 @@
     (:activation act-names)  (cpn/Transition. (:activation namesmap) (constantly true) #{:t, :p} []), ; must check for task and person adequation wrt network
     (:termination act-names) (cpn/Transition. (:termination namesmap) (constantly true) #{:t, :p} []),
     (:resume act-names)  (cpn/Transition. (:resume namesmap) (constantly true) #{:t, :p} []),
-    (:unavailability act-names)  (cpn/Transition. (:unavailability namesmap) (constantly true) #{:t, :p} [])
+    (:unavailability act-names)  (cpn/Transition. (:unavailability namesmap) (constantly true) #{:t, :p} []),
+    (str (:comeback namesmap) lane_id)  (cpn/Transition. (:comeback namesmap) (constantly true) #{:p} [])
      },
    [
     (cpn/Arc. (:prepared act-names) (:activation act-names) #(-> {:t (first %)}) false),
     (cpn/Arc. (:prepared act-names) (:lackexecutors act-names) #(-> {:t (first %)}) false),
-    (cpn/Arc. (:activation act-names) (:activated act-names) #(identity %) false),
+    (cpn/Arc. (:activation act-names) (:activated act-names)
+              activate-task
+              false),
     (cpn/Arc. (:activated act-names) (:termination act-names) #(-> {:t (first %), :p  (second %)}) false),
-    (cpn/Arc. (:termination act-names) (str (:idle namesmap) lane_id) #(-> {:p (:p %)}) false),
-    (cpn/Arc. (:termination act-names) (:done act-names) #(-> {:t (:t %)}) false),
+    (cpn/Arc. (:termination act-names)
+              (str (:idle namesmap) lane_id)
+              idle-person
+              false),
+    (cpn/Arc. (:termination act-names) (:done act-names)
+              terminate-task
+              false),
     (cpn/Arc. (:activated act-names) (:unavailability act-names) #(-> {:t (first %), :p  (second %)}) false),
-    (cpn/Arc. (:unavailability act-names) (:suspended act-names) #(-> {:t (first %)}) false),
+    (cpn/Arc. (:unavailability act-names) (:suspended act-names)
+              suspend-task
+              false),
+    (cpn/Arc. (:unavailability act-names) (str (:on-leave namesmap) lane_id)
+              leave-person
+              false),
+    (cpn/Arc. (str (:on-leave namesmap) lane_id) (str (:comeback namesmap) lane_id)
+              #(-> {:p  (first %)})
+              false),
+   (cpn/Arc.  (str (:comeback namesmap) lane_id) (str (:idle namesmap) lane_id)
+              idle-person
+              false),
     (cpn/Arc. (:suspended act-names) (:resume act-names) #(-> {:t %}) false),
     (cpn/Arc. (str (:idle namesmap) lane_id) (:resume act-names) #(-> {:p %}) false),
     (cpn/Arc. (str (:idle namesmap) lane_id) (:activation act-names) #(-> {:p (first %)}) false),
     (cpn/Arc. (str (:idle namesmap) lane_id) (:lackexecutors act-names) #(-> {:p %}) true),
-    (cpn/Arc. (:resume act-names) (:activated act-names) #(merge (first %) (second %)) false),
-    (cpn/Arc. (:lackexecutors act-names) (:suspended act-names) #(identity %) false)
-    ]
-              
-    )))
+    (cpn/Arc. (:resume act-names) (:activated act-names)
+              #(activate-task (merge (first %) (second %))) false),
+    (cpn/Arc. (:lackexecutors act-names) (:suspended act-names) suspend-task false)
+    ]      
+   )))
+
 
 
 (defn make-start-net
@@ -84,12 +177,12 @@
   [id out] ;out must be the act-name of the input place of the following net... 
   (cpn/CPN. id,
             {"start" (cpn/Place. "start" #{Request} [])
-             (str (:prepared namesmap) out) (cpn/Place. (:prepared namesmap) #{Number} [])
+             (str (:done namesmap) id) (cpn/Place. (:done namesmap) #{Number} [])
              }
             {id (cpn/Transition. id (constantly true) #{:r} [])}
             [
              (cpn/Arc. "start" id #(-> {:r (first %)}) false)
-             (cpn/Arc. id (str (:prepared namesmap) out) #(identity %) false)
+             (cpn/Arc. id (str (:done namesmap) id) #(identity %) false)
              ]))
 
 (defn make-stop-net
@@ -170,11 +263,12 @@
 
 (defn parse-activities
   "Returns a map of CPNs representing each Task in the bpmn description"
-  [data lanemap]
+  [data lanemap instanceid]
   (into {} (for [t  (zx/xml-> data :process :userTask)]
              [(zx/attr t :id) (make-activitynet
                                (zx/attr t :id)
-                               (:id (get lanemap (zx/attr t :id)))) ]
+                               (:id (get lanemap (zx/attr t :id)))
+                               instanceid)]
              )))
 
 ;need to find the corresponding net and its name / id combination.
@@ -197,10 +291,10 @@
 
 (defn build-model
   "takes a path to bpmn file"
-  [path]
+  [path instanceid]
   (let [data  (-> path  io/reader xml/parse zip/xml-zip)
         lanemap (parse-persons data)
-        nets (merge (parse-activities data lanemap)
+        nets (merge (parse-activities data lanemap instanceid)
                     (parse-start data)
                     (parse-end data)
                (parse-flows data)

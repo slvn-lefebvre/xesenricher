@@ -47,7 +47,6 @@
             (map #((:exp %)
                    (first (get-tokens cpn (:in %))))
                  arcs)))))
-
 (defn get-bindings
   "Calls each input arc expression of the specified transition returns the full binding of variables in the form {placename bindings, placename2 bindings2}"
   [cpn trans]
@@ -119,11 +118,12 @@
         (vec (concat n (rest m)))))
 
 (defn remove-tokens [cpn trans binding]
-  (let [places (get-input-places cpn trans)
+  (let [arcs (get-in-arcs cpn trans) ;; going through arcs to get appropriate name for places
         rmv (partial remove-matching-token (into #{} (vals binding)))]
-    (reduce (fn [cpn p]
-              (assoc-in cpn [:places (:name p) :marking] (rmv (:marking p))))
-            cpn places)))
+    (reduce (fn [cpn a]
+              (assoc-in cpn [:places (:in a) :marking]
+                        (rmv (get-in cpn [:places (:in a) :marking]))))
+            cpn arcs)))
 
 (defn get-enabled-bindings
   [cpn trans bdgs]
@@ -139,12 +139,39 @@
 
 (defn fire
    "Tries to fire the specified transition, and returns the resulting CPN state. If the transition is not enabled, returns false"
-  [cpn trans]
+   [cpn trans]
+   (println "Called F")
   (let [bindings (get-enabled-bindings cpn trans (match-bindings cpn trans))]
     (if (< 0 (count bindings))      
       (add-tokens (remove-tokens cpn trans (first bindings)) trans (first bindings))
       cpn
-    )))
+      )))
+
+(defn tenabled?
+   [cpn trans]
+   (< 0 (count  (get-enabled-bindings cpn trans (match-bindings cpn trans)))))
+  
+(defn get-enabled-transitions
+  "returns vector of enabled transitions ids"
+  [cpn]
+  (let [etrans (filter #(tenabled? cpn %) (keys (:transitions cpn)))]
+    (for [t etrans]
+      [t (get-in cpn [:transitions t])])))
+    
+
+(defn random-fire
+  "Fires an enabled transition chosen randomly"
+  [cpn time transprob]
+  (println "called"  (get-enabled-transitions cpn))
+  (reduce (fn [net t]
+            (let [rnd (rand)]
+              (println rnd)
+              (if (< rnd (get transprob (first t)))
+                (do
+                  (println (first t))
+                  (fire cpn (first t)))
+                net)
+              )) cpn (get-enabled-transitions cpn)))
 
 
 ; to avoid ArityException    ref: http://www.markhneedham.com/blog/2013/09/23/clojure-anonymous-functions-using-short-notation-and-the-arityexception-wrong-number-of-args-0-passed-to-persistentvector/
@@ -168,7 +195,6 @@
     [ (Arc. "in"  "Add" #(-> {:x (first %)}) false),
     (Arc. "Add" "out" #(-> {:x (inc (:x %))}) false)]
     ))
-
 
 (def simpleprotocolnet
   (let [message #{Number,String},
