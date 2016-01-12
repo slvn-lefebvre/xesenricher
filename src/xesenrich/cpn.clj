@@ -131,16 +131,18 @@
   
 (defn add-tokens [cpn trans bdg]
   (let [arcs (get-out-arcs cpn trans)]
+    (println bdg)
     (reduce (fn [cpn a]
               (assoc-in cpn [:places (:out a) :marking]
                         (vec (conj (get-in cpn [:places (:out a) :marking])
-                                    (-> ((:exp a) bdg) vals vec)))))
-            cpn arcs)))
+                                   (do
+                                     (println (str (:in a) (:out a)))
+                                     (-> ((:exp a) bdg) vals vec))))))
+                                   cpn arcs)))
 
 (defn fire
    "Tries to fire the specified transition, and returns the resulting CPN state. If the transition is not enabled, returns false"
    [cpn trans]
-   (println "Called F")
   (let [bindings (get-enabled-bindings cpn trans (match-bindings cpn trans))]
     (if (< 0 (count bindings))      
       (add-tokens (remove-tokens cpn trans (first bindings)) trans (first bindings))
@@ -162,14 +164,11 @@
 (defn random-fire
   "Fires an enabled transition chosen randomly"
   [cpn time transprob]
-  (println "called"  (get-enabled-transitions cpn))
   (reduce (fn [net t]
             (let [rnd (rand)]
-              (println rnd)
+              (println t)
               (if (< rnd (get transprob (first t)))
-                (do
-                  (println (first t))
-                  (fire cpn (first t)))
+                (fire cpn (first t))
                 net)
               )) cpn (get-enabled-transitions cpn)))
 

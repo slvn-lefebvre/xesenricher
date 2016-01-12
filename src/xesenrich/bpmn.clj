@@ -62,7 +62,7 @@
 
 (defn make-activitynet
   "Returns a CPN representing a human activity mapped to bpmn tasks"
-  [id lane_id instanceid]
+  [id lane_id instanceid taskname]
   (let [task #{Request}
         person #{Person}
         taskperson #{Request, Person}
@@ -70,11 +70,12 @@
         ;; local functions for logging and arc expressions (ugly, but works)
         activate-task (fn [token]
                         (do
+                          (println token)
                           (log-and-express "lifecycleT"
                                            instanceid
-                                           id
+                                           (str taskname id)
                                            (:activated namesmap)
-                                           [(get-in token [:p :id])])
+                                           [(get-in token [:t :id])])
                           (log-and-express "lifecycleP"
                                            instanceid
                                            (get-in token [:p :id])
@@ -93,7 +94,7 @@
                           (do
                             (log-and-express "lifecycleT"
                                              instanceid
-                                             id
+                                             (str taskname id)
                                              (:done namesmap)
                                              [(get-in token [:p :id])])
                             {:t (:t token)}))
@@ -102,18 +103,18 @@
                        (do
                          (log-and-express "lifecycleT"
                                           instanceid
-                                          id
+                                          (str taskname id)
                                           (:suspended namesmap)
                                           nil)
-                         {:t (first token)}))
+                         {:t (:t token)}))
        leave-person (fn [token]
                        (do
                          (log-and-express "lifecycleP"
                                           instanceid
-                                          (:id token)
+                                          (get-in token [:p :id])
                                           (:on-leave namesmap)
                                           nil)
-                         {:p (first token)}))]
+                         {:p (:p token)}))]
     
   (cpn/CPN.
    id,
@@ -160,12 +161,14 @@
    (cpn/Arc.  (str (:comeback namesmap) lane_id) (str (:idle namesmap) lane_id)
               idle-person
               false),
-    (cpn/Arc. (:suspended act-names) (:resume act-names) #(-> {:t %}) false),
-    (cpn/Arc. (str (:idle namesmap) lane_id) (:resume act-names) #(-> {:p %}) false),
+    (cpn/Arc. (:suspended act-names) (:resume act-names) #(-> {:t (first %)}) false),
+    (cpn/Arc. (str (:idle namesmap) lane_id) (:resume act-names) #(-> {:p (first %)}) false),
     (cpn/Arc. (str (:idle namesmap) lane_id) (:activation act-names) #(-> {:p (first %)}) false),
-    (cpn/Arc. (str (:idle namesmap) lane_id) (:lackexecutors act-names) #(-> {:p %}) true),
+    (cpn/Arc. (str (:idle namesmap) lane_id) (:lackexecutors act-names) #(-> {:p (first %)}) true),
     (cpn/Arc. (:resume act-names) (:activated act-names)
-              #(activate-task (merge (first %) (second %))) false),
+              #(do
+                 (println %)
+                 (activate-task %)) false),
     (cpn/Arc. (:lackexecutors act-names) (:suspended act-names) suspend-task false)
     ]      
    )))
@@ -189,11 +192,11 @@
   [id in] ; in must be the act name of the preceding net.
     (cpn/CPN. id,
             {"stop" (cpn/Place. "stop" #{Request} [])
-             (str (:done namesmap) in) (cpn/Place. (:done namesmap) #{Number} [])
+             (str (:prepared namesmap) in) (cpn/Place. (:prepared namesmap) #{Number} [])
              }
             {id (cpn/Transition. id (constantly true) #{:r} [])}
             [
-             (cpn/Arc. (str (:done namesmap) in) id #(-> {:r (first %)}) false)
+             (cpn/Arc. (str (:prepared namesmap) id) id #(-> {:r (first %)}) false)
              (cpn/Arc. id "stop" #(identity %) false)
              ]))
 
@@ -268,8 +271,8 @@
              [(zx/attr t :id) (make-activitynet
                                (zx/attr t :id)
                                (:id (get lanemap (zx/attr t :id)))
-                               instanceid)]
-             )))
+                               instanceid
+                               (zx/attr t :name))])))
 
 ;need to find the corresponding net and its name / id combination.
 (defn parse-start

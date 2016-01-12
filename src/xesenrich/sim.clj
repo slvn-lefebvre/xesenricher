@@ -13,7 +13,6 @@
   (reduce #(update-in %1 [:places %2 :marking] concat (get token-map %2))
           cpn (keys token-map)))
 
-
 ;; limited timing support: only static global timeout on tasks without executors;
 (defn start-sim [cpn id timeout nbtrans transprob]
   (log/create-instance id)
@@ -21,18 +20,17 @@
         c2       (reduce (fn [net t]
                            (cpn/random-fire net t transprob))
                          cpn timings)]
-    (println timings)
     (log/close-instance (str id ".xes"))
     (cpn/print-markings c2)
     c2))
 
-(def init-map {:default 0.5,
-               "Resume" 0.5,
-               "LackExecutors" 0.1,
-               "Come-Back" 0.2,
-               "Activation" 1.0,
-               "Unavailability" 0.1,
-               "Termination" 0.5,
+(def init-map {:default 1,
+               "Resume" 1,
+               "LackExecutors" 0,
+               "Come-Back" 1,
+               "Activation" 1,
+               "Unavailability" 0,
+               "Termination" 1,
                })
 
 (def token-map {
@@ -58,4 +56,5 @@
         cpn2 (init-sim cpn1 token-map)
         pbbs (get-transprob cpn2 init-map)
         cpn3 (start-sim cpn2 "1" 0 100 pbbs)]
-    (cpn/print-markings cpn3)))
+    (cpn/print-markings cpn3)
+    cpn3))

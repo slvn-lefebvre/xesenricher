@@ -49,10 +49,7 @@
   (spit (str id EXTENSION)
         (str
          "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-         "<!-- XES version 1.0 -->\n"
-         "<!-- Created by Fluxicon Nitro (http://fluxicon.com/nitro/ -->\n"
-	"<!-- (c) 2010 Fluxicon Process Laboratories / http://fluxicon.com/ -->\n"
-        "<log xes.version=\"1.0\" xmlns=\"http://www.xes-standard.org\" xes.creator=\"Fluxicon Nitro\">\n"
+        "<log xes.version=\"1.0\" xmlns=\"http://www.xes-standard.org\" xes.creator=\"xesenrich\">\n"
 	"<extension name=\"Concept\" prefix=\"concept\" uri=\"http://www.xes-standard.org/concept.xesext\"/>\n"
         "<extension name=\"Time\" prefix=\"time\" uri=\"http://www.xes-standard.org/time.xesext\"/>\n"
         "<extension name=\"Organizational\" prefix=\"org\" uri=\"http://www.xes-standard.org/org.xesext\"/>\n"
@@ -62,18 +59,16 @@
 	"<global scope=\"event\">\n"
 	"<string key=\"concept:name\" value=\"name\"/>\n"
 	"<string key=\"org:resource\" value=\"resource\"/>\n"
-	"<date key=\"time:timestamp\" value=\"2011-10-20T14:41:23.198+01:00\"/>\n"
 	"<string key=\"Activity\" value=\"string\"/>\n"
 	"<string key=\"Resource\" value=\"string\"/>\n"
 	"<string key=\"Costs\" value=\"string\"/>\n"
 	"</global>\n"
 	"<classifier name=\"Activity\" keys=\"Activity\"/>\n"
 	"<classifier name=\"activity classifier\" keys=\"Activity\"/>\n"
-	"<string key=\"creator\" value=\"Fluxicon Nitro\"/>\n"
 	"<trace>\n"
 	"<string key=\"concept:name\" value=\""
 	 id "\" />\n"
-         "<string key=\"creator\" value=\"Fluxicon Nitro\"/>\n")
+         "<string key=\"creator\" value=\"XES enricher\"/>\n")
         ))
 
 (defn close-instance
