@@ -2,7 +2,7 @@
 
 (defn write-timestamp
   [file timestamp]
-  (spit file  (str "<date key=\"time:timestamp\" value=\"" timestamp "\"/>") :append true))
+  (spit file  (str "<date key=\"time:timestamp\" value=\"" timestamp "\"/>\n") :append true))
 
 
 (defn write-executors [file executors]
@@ -10,13 +10,13 @@
     (doseq [e executors]
     (spit file (str "<string key=\"org:resource\" value=\""
                     e
-                    "\"/>") :append true))))
+                    "\"/>\n") :append true))))
 
 (defn write-component-id
   [file id]
   (spit file (str  "<string key=\"concept:name\" value=\""
                    id
-                   "\"/>") :append true))
+                   "\"/>\n") :append true))
 
 
 ;; type for Person record yields "xesenrich.bpmn.Person"
@@ -73,8 +73,9 @@
 
 (defn close-instance
   [file]
-  (spit file (str "</trace>\n"
-                  "</log>\n") :append true))
+  (spit file
+        (str "</trace>\n"
+             "</log>\n") :append true))
 
 
 

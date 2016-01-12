@@ -16,11 +16,11 @@
 ;; limited timing support: only static global timeout on tasks without executors;
 (defn start-sim [cpn id timeout nbtrans transprob]
   (log/create-instance id)
-  (let [timings  (take nbtrans (repeatedly #(rand-int 100)))
+  (let [timings  (take nbtrans (reductions + (repeatedly #(rand-int 100)))) ;;generates a seq of sum of rand numbers
         c2       (reduce (fn [net t]
                            (cpn/random-fire net t transprob))
-                         cpn timings)]
-    (log/close-instance (str id ".xes"))
+                         cpn
+                         timings)]
     (cpn/print-markings c2)
     c2))
 
@@ -52,9 +52,9 @@
 
   
 (defn test-sim []
-  (let [cpn1 (bp/build-model "./resources/courseScheduling2.bpmn" "1.xes")
+  (let [cpn1 (bp/build-model "./resources/courseScheduling2.bpmn")
         cpn2 (init-sim cpn1 token-map)
         pbbs (get-transprob cpn2 init-map)
-        cpn3 (start-sim cpn2 "1" 0 100 pbbs)]
+        cpn3 (start-sim cpn2 "0" 0 100 pbbs)]
     (cpn/print-markings cpn3)
     cpn3))

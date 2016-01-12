@@ -129,7 +129,7 @@
   [cpn trans bdgs]
   (filter #(enabled? cpn trans %) bdgs))
   
-(defn add-tokens [cpn trans bdg]
+(defn add-tokens [cpn trans bdg clock]
   (let [arcs (get-out-arcs cpn trans)]
     (println bdg)
     (reduce (fn [cpn a]
@@ -137,15 +137,15 @@
                         (vec (conj (get-in cpn [:places (:out a) :marking])
                                    (do
                                      (println (str (:in a) (:out a)))
-                                     (-> ((:exp a) bdg) vals vec))))))
+                                     (-> ((:exp a) bdg cpn clock) vals vec))))))
                                    cpn arcs)))
 
 (defn fire
    "Tries to fire the specified transition, and returns the resulting CPN state. If the transition is not enabled, returns false"
-   [cpn trans]
+   [cpn trans clock]
   (let [bindings (get-enabled-bindings cpn trans (match-bindings cpn trans))]
     (if (< 0 (count bindings))      
-      (add-tokens (remove-tokens cpn trans (first bindings)) trans (first bindings))
+      (add-tokens (remove-tokens cpn trans (first bindings)) trans (first bindings) clock)
       cpn
       )))
 
@@ -168,7 +168,7 @@
             (let [rnd (rand)]
               (println t)
               (if (< rnd (get transprob (first t)))
-                (fire cpn (first t))
+                (fire cpn (first t) time)
                 net)
               )) cpn (get-enabled-transitions cpn)))
 
