@@ -29,24 +29,11 @@
              state
              "\"/>\n") :append true))
 
-
-;; main logging function
-(defn add-business-log
-  [file clock lifecycle entityid state executors]
-  (spit file "<event>\n" :append true)
-  (write-timestamp file clock)
-  (write-component-id file entityid )
-  (write-state file lifecycle state)
-  (write-executors file executors)
-  (spit file "</event>\n" :append true))
-
-  
-
 (def EXTENSION ".xes")
 
 (defn create-instance
-  [id]
-  (spit (str id EXTENSION)
+  [file]
+  (spit file
         (str
          "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
         "<log xes.version=\"1.0\" xmlns=\"http://www.xes-standard.org\" xes.creator=\"xesenrich\">\n"
@@ -67,13 +54,30 @@
 	"<classifier name=\"activity classifier\" keys=\"Activity\"/>\n"
 	"<trace>\n"
 	"<string key=\"concept:name\" value=\""
-	 id "\" />\n"
+	 file "\" />\n"
          "<string key=\"creator\" value=\"XES enricher\"/>\n")
         ))
 
+;; main logging function
+(defn add-business-log
+  [file clock lifecycle entityid state executors]
+  (if (not (.exists (clojure.java.io/as-file file)))
+    (create-instance file))
+  
+  (spit file "<event>\n" :append true)
+  (write-timestamp file clock)
+  (write-component-id file entityid )
+  (write-state file lifecycle state)
+  (write-executors file executors)
+  (spit file "</event>\n" :append true))
+ 
+
+
+
 (defn close-instance
   [file]
-  (spit file
+  (println (str "closing " file))
+  (spit (str file EXTENSION)
         (str "</trace>\n"
              "</log>\n") :append true))
 

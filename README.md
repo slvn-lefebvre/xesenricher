@@ -27,11 +27,9 @@ It produces a result.xml file as a result.
 ## Todos
 ### Automatic CPN simulation
 ### Support conversion from BPMN to CPN
-- CPN hierarchical
-- Activities to CPN
 - forks to CPN
-
+- timed transition support
 ### Support multiple log files
 - multiple execution instances, for example, provided as path to a folder.
 ### Configurable obstacles
-- Currenlty only injection of a single type of obstacle is supported
+- Currently only injection of a single type of obstacle is supported

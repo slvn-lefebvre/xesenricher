@@ -131,13 +131,11 @@
   
 (defn add-tokens [cpn trans bdg clock]
   (let [arcs (get-out-arcs cpn trans)]
-    (println bdg)
     (reduce (fn [cpn a]
               (assoc-in cpn [:places (:out a) :marking]
                         (vec (conj (get-in cpn [:places (:out a) :marking])
                                    (do
-                                     (println (str (:in a) (:out a)))
-                                     (-> ((:exp a) bdg cpn clock) vals vec))))))
+                                   (-> ((:exp a) bdg cpn clock) vals vec))))))
                                    cpn arcs)))
 
 (defn fire
@@ -166,7 +164,6 @@
   [cpn time transprob]
   (reduce (fn [net t]
             (let [rnd (rand)]
-              (println t)
               (if (< rnd (get transprob (first t)))
                 (fire cpn (first t) time)
                 net)

@@ -57,6 +57,18 @@
        (filter #(= (:lifecycle %) TASK-LC))
        (map #(:id %))))
 
+(defn choose-status
+  "Returns a status chosen randomly from the map thks to the specified probabilities"
+  [statusprob taskname]
+  (let [r (rand)
+        tpbb (get statusprob taskname)]
+    (if (= tpbb nil)
+      ""
+    (first
+     (->> tpbb
+          (filter #(> (second %) r))
+          (reduce #(if (< (second %1) (second %2)) %1 %2)))))))
+
 (defn log-and-express
   [lifecycle file clock entityid state executors]
  (log/add-business-log (str file log/EXTENSION)  clock lifecycle entityid state executors))
@@ -68,7 +80,7 @@
 
 (defn make-activitynet
   "Returns a CPN representing a human activity mapped to bpmn tasks"
-  [id lane_id taskname]
+  [id lane_id taskname statusprob]
   (let [task #{Request}
         person #{Person}
         taskperson #{Request, Person}
@@ -76,7 +88,7 @@
         ;; local functions for logging and arc expressions (ugly, but works)
         activate-task (fn [token cpn clock]
                         (do
-                           (log-and-express PERSON-LC
+                          (log-and-express PERSON-LC
                                             (get-in token [:t :id])
                                             clock
                                            (get-in token [:p :id])
@@ -107,7 +119,11 @@
                                              (str taskname id)
                                              (:done namesmap)
                                              [(get-in token [:p :id])])
-                            {:t (:t token)}))
+                            (let [t {:t (assoc-in (:t token)
+                                          [:status]
+                                          (choose-status statusprob taskname))}]
+                              (println (str taskname id " " t))
+                              t)))
 
         suspend-task (fn [token cpn clock]
                        (log-and-express TASK-LC
@@ -204,17 +220,14 @@
 (defn make-stop-net
   [id in] ; in must be the act name of the preceding net.
     (cpn/CPN. id,
-            {"stop" (cpn/Place. "stop" #{Request} [])
+            {(str "stop" id) (cpn/Place. "stop" #{Request} [])
              (str (:prepared namesmap) in) (cpn/Place. (:prepared namesmap) #{Number} [])
              }
             {id (cpn/Transition. id (constantly true) #{:t} [])}
             [
              (cpn/Arc. (str (:prepared namesmap) id) id #(-> {:t (first %)}) false)
-             (cpn/Arc. id "stop"
-                       (fn [t & _]
-                         (do
-                           (log/close-instance (str (get-in t [:t :id]) log/EXTENSION))
-                           (identity t)))
+             (cpn/Arc. id (str "stop" id)
+                       (fn [t & _] (identity t))
                        false)
              ]))
 
@@ -242,16 +255,17 @@
              [(zx/attr d :id)
               (make-decision-net (zx/attr d :id))])))
 
-(defn make-flownet [in name out cond]
-  (println (str in "  "  name  " " out " " cond))
+(defn make-flownet [in name out status]
   (cpn/CPN.
    name
    { (str (:done namesmap) in) (cpn/Place. (:done namesmap) #{Request} []),
      (str (:prepared namesmap) out) (cpn/Place. (:prepared namesmap) #{Request} [])}
    ;if a condititon expression is required then the transition is a fun on request status
-   { name (cpn/Transition. name (if (= "" cond) 
+   { name (cpn/Transition. name (if (= "" status) 
                                   (constantly true)
-                                  #(= (:status (:t %)))) #{:t} [])}
+                                  #(do
+                                     (println (str name " "  status " " (:status (:t %))))
+                                     (= (:status (:t %)) status))) #{:t} [])}
    [ (cpn/Arc.  (str (:done namesmap) in) name #(-> {:t (first %)}) false)
      (cpn/Arc. name (str (:prepared namesmap) out) (fn [t & _] (identity t)) false) ]))
 
@@ -285,12 +299,13 @@
 
 (defn parse-activities
   "Returns a map of CPNs representing each Task in the bpmn description"
-  [data lanemap]
+  [data lanemap statusprob]
   (into {} (for [t  (zx/xml-> data :process :userTask)]
              [(zx/attr t :id) (make-activitynet
                                (zx/attr t :id)
                                (:id (get lanemap (zx/attr t :id)))
-                               (zx/attr t :name))])))
+                               (zx/attr t :name)
+                               statusprob)])))
 
 ;need to find the corresponding net and its name / id combination.
 (defn parse-start
@@ -313,10 +328,10 @@
 
 (defn build-model
   "takes a path to bpmn file"
-  [path]
+  [path statusprob]
   (let [data  (-> path  io/reader xml/parse zip/xml-zip)
         lanemap (parse-persons data)
-        nets (merge (parse-activities data lanemap)
+        nets (merge (parse-activities data lanemap statusprob)
                     (parse-start data)
                     (parse-end data)
                (parse-flows data)

@@ -78,7 +78,7 @@
       <outgoing>_2</outgoing>
     </userTask>
     <sequenceFlow id="_38" sourceRef="_21" targetRef="_37"/>
-    <sequenceFlow id="_39" sourceRef="_37" targetRef="_34">
+b    <sequenceFlow id="_39" sourceRef="_37" targetRef="_34">
       <conditionExpression><![CDATA[YES]]></conditionExpression>
     </sequenceFlow>
     <startEvent id="_13" isInterrupting="true" name="Request" parallelMultiple="false">
@@ -98,7 +98,9 @@
       <incoming>_5</incoming>
       <inputSet/>
     </endEvent>
-    <sequenceFlow id="_5" sourceRef="_37" targetRef="_4"/>
+    <sequenceFlow id="_5" sourceRef="_37" targetRef="_4">
+      <conditionExpression><![CDATA[NO]]></conditionExpression>
+    </sequenceFlow>
     <endEvent id="_12" name="End Event">
       <incoming>_2</incoming>
       <inputSet/>
