@@ -76,7 +76,6 @@
 
 (defn close-instance
   [file]
-  (println (str "closing " file))
   (spit (str file EXTENSION)
         (str "</trace>\n"
              "</log>\n") :append true))

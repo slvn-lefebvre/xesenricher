@@ -4,7 +4,6 @@
             [clojure.zip :as zip]
             [clojure.data.zip :as c-d-zip]
             [clojure.data.zip.xml :as zx]
-            [clojure.java.io :as io]
             [clojure.pprint :as p]))
 
 
@@ -54,7 +53,7 @@
 (defrecord Bevent [id instance category timestamp component state executors task])
 
 
-;evt s illustrates how the enterprise networks are used to address obstacles that
+;events illustrates how the enterprise networks are used to address obstacles that
 ;hinder the execution of a BP instance. evt s is also defined as a 6-tuple
 ;< id, tg, en, c n , rel, out > where: id is a logged event identifier; tg is a trigger
 ;linked to a business event identifier; en is an enterprise network involved in
@@ -96,13 +95,13 @@
                                           [(:component event)]))
                          nil))))
 (defrecord solution [task, cn , en, rel, out])
-(defn build-repository
+(comment (defn build-repository
   [blog slog repo]
   (let [exceptions (clojure.set/select #(and (= :suspended (:state %))
                                              (= :task (:category %)))
                                        blog)]
     ()                                           
-  )
+  )))
   
 
 ;; Idea is to have one log per person, machine, etc... with matching timestamps, eventually

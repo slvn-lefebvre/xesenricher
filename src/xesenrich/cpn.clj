@@ -11,7 +11,7 @@
 
 (defn print-markings [cpnet]
   (doseq [[n p] (:places cpnet)]
-    (prn (str n " " (:marking p)))))
+    (prn (str n " " (vec (:marking p))))))
 
 (defn get-in-arcs [cpn node] (filter #(= (:out %) node) (:arcs cpn)))
 (defn get-out-arcs [cpn node] (filter #(= (:in %) node) (:arcs cpn)))
@@ -134,22 +134,23 @@
     (reduce (fn [cpn a]
               (assoc-in cpn [:places (:out a) :marking]
                         (vec (conj (get-in cpn [:places (:out a) :marking])
-                                   (do
-                                   (-> ((:exp a) bdg cpn clock) vals vec))))))
-                                   cpn arcs)))
+                                   (-> ((:exp a) bdg cpn clock) vals vec)))))
+            cpn arcs)))
 
 (defn fire
    "Tries to fire the specified transition, and returns the resulting CPN state. If the transition is not enabled, returns false"
    [cpn trans clock]
+   (println (str "=== FIRING " trans " ==="))
   (let [bindings (get-enabled-bindings cpn trans (match-bindings cpn trans))]
-    (if (< 0 (count bindings))      
-      (add-tokens (remove-tokens cpn trans (first bindings)) trans (first bindings) clock)
-      cpn
-      )))
+    (if (< 0 (count bindings))      ;; double check for concurrent events
+      (add-tokens
+       (remove-tokens cpn trans (first bindings)) trans (first bindings) clock)
+      cpn)))
 
 (defn tenabled?
-   [cpn trans]
-   (< 0 (count  (get-enabled-bindings cpn trans (match-bindings cpn trans)))))
+  [cpn trans]
+  (< 0 (count
+        (get-enabled-bindings cpn trans (match-bindings cpn trans)))))
   
 (defn get-enabled-transitions
   "returns vector of enabled transitions ids"
@@ -160,14 +161,15 @@
     
 
 (defn random-fire
-  "Fires an enabled transition chosen randomly"
+  "Fires one and only one enabled transition chosen randomly"
   [cpn time transprob]
+  (print-markings cpn)
   (reduce (fn [net t]
-            (let [rnd (rand)]
-              (if (< rnd (get transprob (first t)))
-                (fire cpn (first t) time)
-                net)
-              )) cpn (get-enabled-transitions cpn)))
+            (if (< (rand) (get transprob (first t)))
+                (fire net (first t) time)
+                net))
+          
+          cpn (get-enabled-transitions cpn)))
 
 
 ; to avoid ArityException    ref: http://www.markhneedham.com/blog/2013/09/23/clojure-anonymous-functions-using-short-notation-and-the-arityexception-wrong-number-of-args-0-passed-to-persistentvector/

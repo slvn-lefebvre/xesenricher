@@ -55,7 +55,9 @@
        (map #(get-in bp [:places % :marking]))
        flatten
        (filter #(= (:lifecycle %) TASK-LC))
-       (map #(:id %))))
+       (map #(:id %))
+       distinct
+       ))
 
 (defn choose-status
   "Returns a status chosen randomly from the map thks to the specified probabilities"
@@ -102,15 +104,15 @@
                                            [(get-in token [:p :id])])
                           (identity token)))
         idle-person (fn [token cpn clock]
-                         (do
-                           (doseq [instanceid (get-instance-ids cpn)]
+                      (doseq [instanceid (get-instance-ids cpn)]
+                             (println instanceid)
                              (log-and-express PERSON-LC
                                               instanceid
                                               clock
                                             (get-in token [:p :id])
                                             (:idle namesmap)
                                             nil))
-                           {:p (:p token)}))
+                           {:p (:p token)})
         terminate-task  (fn [token cpn clock]
                           (do
                             (log-and-express TASK-LC
@@ -119,11 +121,9 @@
                                              (str taskname id)
                                              (:done namesmap)
                                              [(get-in token [:p :id])])
-                            (let [t {:t (assoc-in (:t token)
+                            {:t (assoc-in (:t token)
                                           [:status]
-                                          (choose-status statusprob taskname))}]
-                              (println (str taskname id " " t))
-                              t)))
+                                          (choose-status statusprob taskname))}))
 
         suspend-task (fn [token cpn clock]
                        (log-and-express TASK-LC
@@ -133,8 +133,7 @@
                                         (:suspended namesmap)
                                         nil)
                          {:t (:t token)})
-       leave-person (fn [token cpn clock]
-                      (do
+        leave-person (fn [token cpn clock]
                         (doseq [instanceid (get-instance-ids cpn)]
                           (log-and-express PERSON-LC
                                            instanceid
@@ -142,12 +141,11 @@
                                           (get-in token [:p :id])
                                           (:on-leave namesmap)
                                           nil))
-                        {:p (:p token)})),
+                        {:p (:p token)}),
        out-task (fn [token] {:t (first token)}),
        out-person (fn [token] {:p (first token)}),
        task-person (fn [token] {:t (first token), :p  (second token)})
        ]
-    
   (cpn/CPN.
    id,
    {
@@ -200,9 +198,7 @@
     (cpn/Arc. (:resume act-names) (:activated act-names) activate-task false),
     (cpn/Arc. (:lackexecutors act-names) (:suspended act-names) suspend-task false)
     ]      
-   )))
-
-
+  )))
 
 (defn make-start-net
   "Returns a CPN modelling a bpmn start point"
@@ -263,9 +259,7 @@
    ;if a condititon expression is required then the transition is a fun on request status
    { name (cpn/Transition. name (if (= "" status) 
                                   (constantly true)
-                                  #(do
-                                     (println (str name " "  status " " (:status (:t %))))
-                                     (= (:status (:t %)) status))) #{:t} [])}
+                                  #(= (:status (:t %)) status)) #{:t} [])}
    [ (cpn/Arc.  (str (:done namesmap) in) name #(-> {:t (first %)}) false)
      (cpn/Arc. name (str (:prepared namesmap) out) (fn [t & _] (identity t)) false) ]))
 
