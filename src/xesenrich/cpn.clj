@@ -139,9 +139,8 @@
 
 (defn fire
    "Tries to fire the specified transition, and returns the resulting CPN state. If the transition is not enabled, returns false"
-   [cpn trans clock]
-   (println (str "=== FIRING " trans " ==="))
-  (let [bindings (get-enabled-bindings cpn trans (match-bindings cpn trans))]
+  [cpn trans clock]
+   (let [bindings (get-enabled-bindings cpn trans (match-bindings cpn trans))]
     (if (< 0 (count bindings))      ;; double check for concurrent events
       (add-tokens
        (remove-tokens cpn trans (first bindings)) trans (first bindings) clock)
@@ -163,7 +162,6 @@
 (defn random-fire
   "Fires one and only one enabled transition chosen randomly"
   [cpn time transprob]
-  (print-markings cpn)
   (reduce (fn [net t]
             (if (< (rand) (get transprob (first t)))
                 (fire net (first t) time)
@@ -171,8 +169,24 @@
           
           cpn (get-enabled-transitions cpn)))
 
-
+(defn random-fire2
+  "Fires one and only one enabled transition chosen randomly"
+  [cpn time transprob]
+  (let [t (first (first (get-enabled-transitions cpn)))]
+        (if (< (rand) (get transprob t))
+                (fire cpn t time)
+                cpn)))
 ; to avoid ArityException    ref: http://www.markhneedham.com/blog/2013/09/23/clojure-anonymous-functions-using-short-notation-and-the-arityexception-wrong-number-of-args-0-passed-to-persistentvector/
+
+(defn merge-arcs [arcs]
+  (reduce (fn [t a]
+            (if (< 0 (count
+                      (filter
+                       #(and (= (:in %) (:in a)) (= (:out %) (:out a)))
+                       t)))
+              t
+              (conj t a)))
+          [] arcs))
 
 (defn merge-cpn
   "This function returns a cpn that is the merger of cpn1 and cpn2. Places with the same name will be merged together, arcs and transitions are preserved as is."
@@ -180,7 +194,7 @@
   (CPN. (str (:id cpn1) (:id cpn2))
         (into (:places cpn1) (:places cpn2))
         (into (:transitions cpn1) (:transitions cpn2))
-        (into (:arcs cpn1) (:arcs cpn2))))
+        (merge-arcs (into (:arcs cpn1) (:arcs cpn2)))))
 
 
 

@@ -25,9 +25,7 @@ Xesenrich takes, for now, only the file to enrich as an argument, and only injec
 It produces a result.xml file as a result.
 
 ## Todos
-### Automatic CPN simulation
 ### Support conversion from BPMN to CPN
-- forks to CPN
 - timed transition support
 ### Support multiple log files
 - multiple execution instances, for example, provided as path to a folder.

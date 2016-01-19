@@ -23,12 +23,9 @@
   (let [timings  (take nbtrans
                        (reductions + (repeatedly
                                       #(rand-int 100))))]
-    (reduce (fn [net t]
-              (read-line)
-                     (cpn/random-fire net t transprob))
+    (reduce (fn [net t] (cpn/random-fire2 net t transprob))
                    cpn
-                   timings)
-    ))
+                   timings)))
 
 (def init-map {:default 1,
                "Resume" 1,
@@ -70,7 +67,6 @@
   (let [cpn1 (bp/build-model "./resources/courseScheduling2.bpmn" statusprobs)
         cpn2 (init-sim cpn1 token-map)
         pbbs (get-transprob cpn2 init-map)
-        cpn3 (start-sim cpn2 "0" 0 10 pbbs)
-        ]
+        cpn3 (start-sim cpn2 "0" 0 10 pbbs)]
     (end-sim cpn3)
     cpn3))

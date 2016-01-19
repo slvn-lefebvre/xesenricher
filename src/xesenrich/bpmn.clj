@@ -56,8 +56,7 @@
        flatten
        (filter #(= (:lifecycle %) TASK-LC))
        (map #(:id %))
-       distinct
-       ))
+       distinct))
 
 (defn choose-status
   "Returns a status chosen randomly from the map thks to the specified probabilities"
@@ -105,7 +104,6 @@
                           (identity token)))
         idle-person (fn [token cpn clock]
                       (doseq [instanceid (get-instance-ids cpn)]
-                             (println instanceid)
                              (log-and-express PERSON-LC
                                               instanceid
                                               clock
