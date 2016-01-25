@@ -140,6 +140,7 @@
 (defn fire
    "Tries to fire the specified transition, and returns the resulting CPN state. If the transition is not enabled, returns false"
   [cpn trans clock]
+  (println trans)
    (let [bindings (get-enabled-bindings cpn trans (match-bindings cpn trans))]
     (if (< 0 (count bindings))      ;; double check for concurrent events
       (add-tokens
@@ -160,19 +161,18 @@
     
 
 (defn random-fire
-  "Fires one and only one enabled transition chosen randomly"
+  "Fires any enabled transition chosen randomly"
   [cpn time transprob]
   (reduce (fn [net t]
             (if (< (rand) (get transprob (first t)))
                 (fire net (first t) time)
                 net))
-          
           cpn (get-enabled-transitions cpn)))
 
 (defn random-fire2
   "Fires one and only one enabled transition chosen randomly"
   [cpn time transprob]
-  (let [t (first (first (get-enabled-transitions cpn)))]
+  (let [t (first (first (get-enabled-transitions cpn)))] 
         (if (< (rand) (get transprob t))
                 (fire cpn t time)
                 cpn)))

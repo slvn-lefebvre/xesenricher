@@ -4,7 +4,6 @@
             [clojure.zip :as zip]
             [clojure.data.zip :as c-d-zip]
             [clojure.data.zip.xml :as zx]
-            [clojure.java.io :as io]
             [clojure.pprint :as p]
             [xesenrich.xeslog :as log]
             )
@@ -25,7 +24,8 @@
   
 (defrecord Person [id lifecycle]
   Entity
-  (get-id [this] (:id this))  )
+  (get-id [this] (:id this)))
+
 
 (defrecord Request [id lifecycle task status executors]
   Entity
@@ -63,6 +63,7 @@
   [statusprob taskname]
   (let [r (rand)
         tpbb (get statusprob taskname)]
+    (println tpbb)
     (if (= tpbb nil)
       ""
     (first
@@ -272,7 +273,7 @@
                   (zx/text f))])))
 
 
-(def root (-> "/home/slefebvr/clojure/xesenrich/resources/courseScheduling2.bpmn" io/reader xml/parse zip/xml-zip))
+;(def root (-> "/home/slefebvr/clojure/xesenrich/resources/courseScheduling2.bpmn" io/reader xml/parse zip/xml-zip))
 
 
 (defrecord Lane [id name])
@@ -320,8 +321,8 @@
 
 (defn build-model
   "takes a path to bpmn file"
-  [path statusprob]
-  (let [data  (-> path  io/reader xml/parse zip/xml-zip)
+  [content statusprob]
+  (let [data  (-> content xml/parse zip/xml-zip)
         lanemap (parse-persons data)
         nets (merge (parse-activities data lanemap statusprob)
                     (parse-start data)

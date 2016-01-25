@@ -4,7 +4,9 @@
             [clojure.zip :as zip]
             [clojure.data.zip :as c-d-zip]
             [clojure.data.zip.xml :as zx]
-            [clojure.pprint :as p]))
+            [clojure.pprint :as p]
+            [xesenrich.sim :as sim]
+            [xesenrich.bpmn :as bp]))
 
 
 (defn get-timestamp [loc]
@@ -69,7 +71,7 @@
   true)
 (defn expected? [ts c] true)
 
-(defn detect-obstacle
+(comment (defn detect-obstacle
   "Returns an obstacle if the event is considered to be one, or nil"
   [event blog] ;Bevent
   (let [make-obstacle (partial Obstacle (:id event) (:instance event))]
@@ -101,16 +103,23 @@
                                              (= :task (:category %)))
                                        blog)]
     ()                                           
-  )))
+  ))))
   
 
 ;; Idea is to have one log per person, machine, etc... with matching timestamps, eventually
 ;; this way you can detect "happen before relationships", but only keep interesting obstacles.
 ;; print out stats about tasks, machines and persons
-(defn -main
+(comment (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (let [xml-data (xml/parse-str (slurp (first args)))
         injected (tree-edit (zip/xml-zip xml-data) match-suspended? new-oponleave)]
-    (spit  "./resources/result.xml" (xml/indent-str injected))))
+    (spit  "./resources/result.xml" (xml/indent-str injected)))))
+
+(defn -main
+  [& args]
+  (let [path (first args)
+        cpn (bp/build-model (sim/load-bpmn path) sim/statusprobs)
+        ]
+    (sim/sim-suspend cpn sim/token-map (sim/get-transprob cpn sim/init-map) sim/ask-solution)))
 
