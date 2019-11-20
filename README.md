@@ -11,6 +11,8 @@ If you don't have it, download and install [leiningen].
 
 Then you can clone this repository, and use lein to build a usable version of the sofware, by running this command in the wesenrich folder:
 
+	$ git clone https://github.com/slvn-lefebvre/xesenricher.git
+	$ cd xesenricher
 	$ lein uberjar
 
 [Clojure]: http://clojure.org/
